@@ -1,0 +1,9 @@
+/.idea/
+/dist/
+/build/
+/Data/Document/*
+/Data/Image/*
+/Data/Text/*
+/export/
+/__pycache__/
+/venv/
