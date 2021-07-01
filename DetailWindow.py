@@ -53,6 +53,7 @@ class MyListItem(QWidget):
         self.editbtn.setVisible(False)
         self.linedit.setVisible(True)
         self.confirmbtn.setVisible(True)
+        self.deletebtn.setEnabled(False)
         self.linedit.setText(self.label.text())
         self.origlabel = self.label.text()
 
@@ -66,6 +67,7 @@ class MyListItem(QWidget):
             self.editbtn.setVisible(True)
             self.linedit.setVisible(False)
             self.confirmbtn.setVisible(False)
+            self.deletebtn.setEnabled(False)
             self.text = t_label
             self.label.setText(t_label)
 

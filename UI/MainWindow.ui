@@ -123,7 +123,33 @@
             </item>
            </layout>
           </widget>
-          <widget class="QListWidget" name="listWidget_category"/>
+          <widget class="QWidget" name="verticalLayoutWidget">
+           <layout class="QVBoxLayout" name="verticalLayout_3">
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="QListWidget" name="listWidget_category"/>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout">
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
+              <item>
+               <widget class="QLineEdit" name="lineEdit_newcategory"/>
+              </item>
+              <item>
+               <widget class="QPushButton" name="pushButton_newcategory">
+                <property name="text">
+                 <string>新增类别</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </widget>
          </widget>
         </item>
        </layout>

@@ -7,9 +7,10 @@ import sys
 import xlwt
 import xlrd
 from bs4 import BeautifulSoup as bs
-from PyQt5.QtWidgets import QMainWindow,QApplication,QTableWidgetItem, QAbstractItemView, QMessageBox, QFileDialog
+from PyQt5.QtWidgets import QMainWindow,QApplication,QTableWidgetItem,\
+    QAbstractItemView, QMessageBox, QFileDialog, QMenu
 from PyQt5 import QtCore
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QIcon, QCursor
 
 from UI.MainWindow import Ui_MainWindow
 from DetailWindow import DetailDialog
@@ -17,7 +18,6 @@ from DetailWindow import DetailDialog
 from ShareData import sharedata
 
 #Todo:写侧边栏，用于对不同的文档进行分类
-#Todo:写label选择栏，用于显示、隐藏、排序标签
 
 class DocumentManagerMainWindow(QMainWindow,Ui_MainWindow):
     def __init__(self,parent=None):
@@ -26,6 +26,7 @@ class DocumentManagerMainWindow(QMainWindow,Ui_MainWindow):
         self.setUp()
         self.setWindowTitle("文献管理")
         self.setWindowIcon(QIcon("./media/ustb.ico"))
+
         # self.setWindowIcon(sharedata.icon)
 
     def setUp(self):
@@ -33,13 +34,25 @@ class DocumentManagerMainWindow(QMainWindow,Ui_MainWindow):
         self.table_document.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.table_document.setSortingEnabled(True)
         self.table_document.doubleClicked.connect(self.on_btn_editDocument_clicked)
+        self.table_document.setContextMenuPolicy(3)
+        self.table_document.customContextMenuRequested[QtCore.QPoint].connect(self.createMenu)
+
         self.listWidget_labelshow.sg_ShowListChange.connect(self.on_btn_search_clicked)
-
-        self.loadLabelList()
-
+        self.listWidget_category.sg_showrow.connect(self.showCategory)
 
 
-    def loadLabelList(self, name_list = None):
+        self.n_category = list(sharedata.getAllLabelData().keys())
+        self.loadLabelList(list(sharedata.getAllLabelData().keys()))
+
+
+
+    def loadLabelList(self, name_list):
+        dist_list = []
+        for name in name_list:
+            if name in self.n_category:
+                dist_list.append(name)
+        name_list = dist_list
+        self.name_list = dist_list
         all_labelData = sharedata.getAllLabelData()
         # labels = sharedata.getLabels()
         labels = sharedata.getLabelShow()
@@ -54,30 +67,21 @@ class DocumentManagerMainWindow(QMainWindow,Ui_MainWindow):
             if label not in sharedata.getLabelShow():
                 self.comboBox_selectlabel.addItem(label)
 
-        if name_list == None:
-            self.table_document.setRowCount(len(all_labelData))
-            for i in range(len(all_labelData)):
-                name = list(all_labelData.keys())[i]
-                t_dict = all_labelData[name]
-                name_item = QTableWidgetItem(name)
+
+        self.table_document.setRowCount(len(name_list))
+        for i in range(len(name_list)):
+            name = name_list[i]
+            t_dict = all_labelData[name]
+            name_item = QTableWidgetItem(name)
+            if "标题" in labels:
                 self.table_document.setItem(i, labels.index("标题"), name_item)
-                for key in t_dict:
-                    if key not in labels:
-                        continue
-                    t_item = QTableWidgetItem(t_dict[key])
-                    self.table_document.setItem(i, labels.index(key),t_item)
-        else:
-            self.table_document.setRowCount(len(name_list))
-            for i in range(len(name_list)):
-                name = name_list[i]
-                t_dict = all_labelData[name]
-                name_item = QTableWidgetItem(name)
-                self.table_document.setItem(i, labels.index("标题"), name_item)
-                for key in t_dict:
-                    if key not in labels:
-                        continue
-                    t_item = QTableWidgetItem(t_dict[key])
-                    self.table_document.setItem(i, labels.index(key), t_item)
+            for key in t_dict:
+                if key not in labels:
+                    continue
+                if key == "标题":
+                    continue
+                t_item = QTableWidgetItem(t_dict[key])
+                self.table_document.setItem(i, labels.index(key), t_item)
 
 
     @QtCore.pyqtSlot()
@@ -138,7 +142,8 @@ class DocumentManagerMainWindow(QMainWindow,Ui_MainWindow):
             sheet.write(0,i,labels[i])
 
         labeldata = sharedata.getAllLabelData()
-        keylist = list(labeldata.keys())
+        # keylist = list(labeldata.keys())
+        keylist = self.on_btn_search_clicked()
         #导出到excel中
         for i in range(len(keylist)):
             name = keylist[i]
@@ -207,6 +212,8 @@ class DocumentManagerMainWindow(QMainWindow,Ui_MainWindow):
 
         fileList = glob.glob(sharedata.getRichTextRoot()+"*.html")
         for file in fileList:
+            if os.path.split(file)[-1].split('.')[0] not in keylist:
+                continue
             with open(file, "r") as f:
                 cache = ""
                 for line in f.readlines():
@@ -275,7 +282,7 @@ class DocumentManagerMainWindow(QMainWindow,Ui_MainWindow):
             sharedata.saveShareData()
 
 
-        self.loadLabelList()
+        self.on_btn_search_clicked()
 
         # excel_dir = os.path.split(excel_file)[0]
         # data_dir = os.path.join(excel_dir, "Data")
@@ -340,7 +347,8 @@ class DocumentManagerMainWindow(QMainWindow,Ui_MainWindow):
             self.loadLabelList(accept_names)
         elif t_text == "":
             self.table_document.clear()
-            self.loadLabelList()
+            accept_names = list(sharedata.getAllLabelData().keys())
+            self.loadLabelList(accept_names)
         else:
             for name in allLabelData:
                 if t_text in name:
@@ -357,14 +365,17 @@ class DocumentManagerMainWindow(QMainWindow,Ui_MainWindow):
             self.table_document.clear()
             self.loadLabelList(accept_names)
 
+        return accept_names
+
 
     @QtCore.pyqtSlot()
     def on_pushButton_showlabel_clicked(self):
         index = self.comboBox_selectlabel.currentIndex()
         c_text = self.comboBox_selectlabel.currentText()
+        t_show = sharedata.getLabelShow()
         if index != -1:
             self.listWidget_labelshow.addOne(c_text)
-            sharedata.setLabelShow(sharedata.getLabelShow()+[c_text])
+            sharedata.setLabelShow(t_show + [c_text])
             self.on_btn_search_clicked()
 
 
@@ -375,11 +386,82 @@ class DocumentManagerMainWindow(QMainWindow,Ui_MainWindow):
         self.on_btn_search_clicked()
 
 
+    @QtCore.pyqtSlot()
+    def on_pushButton_newcategory_clicked(self):
+        c_text = self.lineEdit_newcategory.text()
+
+        if c_text in sharedata.getCategory().keys():
+            reply = QMessageBox().warning(self, "警告", "类别不能重复！", QMessageBox.Yes)
+            return
+
+        if c_text.strip() == "":
+            reply = QMessageBox().warning(self, "警告", "类别不能为空！", QMessageBox.Yes)
+            return
+
+        if c_text.strip() in ["全部","其他"]:
+            reply = QMessageBox().warning(self, "警告", "不能使用预置类别！", QMessageBox.Yes)
+            return
+
+        self.listWidget_category.addOne(c_text)
+
+        n_category = sharedata.getCategory()
+        n_category[c_text] = []
+        sharedata.setCategory(n_category)
+        self.listWidget_category.getNowOrder()
+        self.lineEdit_newcategory.setText("")
 
 
+    def createMenu(self, cursor_point):
+        if self.table_document.currentRow() == -1:
+            return
+        self.contextMenu = QMenu(self.table_document)
+        self.changeCategoryActionList = []
 
+        t_category = sharedata.getCategory()
 
+        other_action = self.contextMenu.addAction("放入\"{}\"类别中".format("其他"))
+        other_action.triggered.connect(lambda :self.changeCategory(self.table_document.currentRow(),"##OTHERS##"))
+        self.changeCategoryActionList.append(other_action)
 
+        for name in list(t_category.keys()):
+            self.changeCategoryActionList.append(self.createMenuAction(name))
+
+        for aciton in self.changeCategoryActionList:
+            self.contextMenu.addAction(aciton)
+
+        self.contextMenu.exec_(QCursor.pos())
+
+    def createMenuAction(self, name):
+        t_action = self.contextMenu.addAction("放入\"{}\"类别中".format(name))
+        t_action.triggered.connect(lambda: self.changeCategory(self.table_document.currentRow(), name))
+        return t_action
+
+    def changeCategory(self, row, dist):
+        name = self.name_list[row]
+        CategoryDictionary = sharedata.getAllName2Category()
+        orig_category = CategoryDictionary[name]
+        t_category = sharedata.getCategory()
+        if orig_category != "##OTHERS##":
+            t_category[orig_category].remove(name)
+        if dist != "##OTHERS##":
+            t_category[dist].append(name)
+        self.listWidget_category.rowClicked()
+        self.listWidget_category.updateNum()
+
+    def showCategory(self, type):
+        if type == "全部":
+            self.n_category = list(sharedata.getAllLabelData().keys())
+        elif type == "其他":
+            t_list = []
+            CategoryDictionary = sharedata.getAllName2Category()
+            for name in CategoryDictionary:
+                if CategoryDictionary[name] == "##OTHERS##":
+                    t_list.append(name)
+            self.n_category = t_list
+        else:
+            self.n_category = sharedata.getCategory()[type]
+
+        self.on_btn_search_clicked()
 
 
 

@@ -101,6 +101,43 @@ class ShareData():
                 res.append(label)
         return res
 
+    def setCategory(self, dict):
+        self.config["Category"] = dict
+
+    def getCategory(self):
+        all_name = list(self.getAllLabelData().keys())
+        res = {}
+        if "Category" not in self.config.keys():
+            self.config["Category"] = {}
+        for cate in self.config["Category"]:
+            for name in self.config["Category"][cate]:
+                if name not in all_name:
+                    self.config["Category"][cate].remove(name)
+        return self.config["Category"]
+
+
+    def getAllName2Category(self):
+        all_list = list(self.getAllLabelData().keys())
+        in_dict = {}
+        t_category = self.getCategory()
+        for _type in t_category:
+            for name in t_category[_type]:
+                in_dict[name] = _type
+        for t in all_list:
+            if t not in in_dict.keys():
+                in_dict[t] = "##OTHERS##"
+
+        return in_dict
+
+
+    def getCategoryOrder(self):
+        if "CategoryOrder" not in self.config.keys():
+            self.config["CategoryOrder"] = list(self.getCategory().keys())
+        return self.config["CategoryOrder"]
+
+    def setCategoryOrder(self, order):
+        self.config["CategoryOrder"] = order
+
     def saveShareData(self):
         with open(self.shareDataPath, "w") as f:
             json.dump(self.config, f)
