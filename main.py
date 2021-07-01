@@ -32,21 +32,27 @@ class DocumentManagerMainWindow(QMainWindow,Ui_MainWindow):
         self.table_document.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.table_document.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.table_document.setSortingEnabled(True)
-        self.table_document.doubleClicked.connect(self.showDetail)
+        self.table_document.doubleClicked.connect(self.on_btn_editDocument_clicked)
+        self.listWidget_labelshow.sg_ShowListChange.connect(self.on_btn_search_clicked)
+
         self.loadLabelList()
 
 
 
     def loadLabelList(self, name_list = None):
         all_labelData = sharedata.getAllLabelData()
-        labels = sharedata.getLabels()
+        # labels = sharedata.getLabels()
+        labels = sharedata.getLabelShow()
 
-
-        self.table_document.setColumnCount(len(["标题"]+labels))
-        self.table_document.setHorizontalHeaderLabels(["标题"] + labels)
+        self.table_document.setColumnCount(len(labels))
+        self.table_document.setHorizontalHeaderLabels(labels)
         self.cbbox_searchTerm.clear()
-        self.cbbox_searchTerm.addItems(["标题"]+labels)
+        self.cbbox_searchTerm.addItems(labels)
 
+        self.comboBox_selectlabel.clear()
+        for label in ["标题"]+sharedata.getLabels():
+            if label not in sharedata.getLabelShow():
+                self.comboBox_selectlabel.addItem(label)
 
         if name_list == None:
             self.table_document.setRowCount(len(all_labelData))
@@ -54,20 +60,24 @@ class DocumentManagerMainWindow(QMainWindow,Ui_MainWindow):
                 name = list(all_labelData.keys())[i]
                 t_dict = all_labelData[name]
                 name_item = QTableWidgetItem(name)
-                self.table_document.setItem(i, 0, name_item)
+                self.table_document.setItem(i, labels.index("标题"), name_item)
                 for key in t_dict:
+                    if key not in labels:
+                        continue
                     t_item = QTableWidgetItem(t_dict[key])
-                    self.table_document.setItem(i, labels.index(key)+1,t_item)
+                    self.table_document.setItem(i, labels.index(key),t_item)
         else:
             self.table_document.setRowCount(len(name_list))
             for i in range(len(name_list)):
                 name = name_list[i]
                 t_dict = all_labelData[name]
                 name_item = QTableWidgetItem(name)
-                self.table_document.setItem(i, 0, name_item)
+                self.table_document.setItem(i, labels.index("标题"), name_item)
                 for key in t_dict:
+                    if key not in labels:
+                        continue
                     t_item = QTableWidgetItem(t_dict[key])
-                    self.table_document.setItem(i, labels.index(key) + 1, t_item)
+                    self.table_document.setItem(i, labels.index(key), t_item)
 
 
     @QtCore.pyqtSlot()
@@ -163,6 +173,7 @@ class DocumentManagerMainWindow(QMainWindow,Ui_MainWindow):
                                     if label in data.keys():
                                         value = data[label]
                                     df.write("<p>{}:{}</p>".format(label,value))
+                                df.write("<p>{}</p>".format("-" * 20))
 
 
                             count += 1
@@ -183,7 +194,7 @@ class DocumentManagerMainWindow(QMainWindow,Ui_MainWindow):
                         if label in data.keys():
                             value = data[label]
                         df.write("<p>{}:{}</p>".format(label, value))
-
+                    df.write("<p>{}</p>".format("-"*20))
                     tail = """
                     </body></html>
                     """
@@ -226,6 +237,8 @@ class DocumentManagerMainWindow(QMainWindow,Ui_MainWindow):
     @QtCore.pyqtSlot()
     def on_btn_inportDocument_clicked(self):
         excel_file,_ = QFileDialog.getOpenFileName(filter="EXCEL File(*.xls *.xlsx)")
+        if excel_file == "":
+            return
         book = xlrd.open_workbook(excel_file)
 
         sheet = book.sheets()[0]
@@ -253,10 +266,16 @@ class DocumentManagerMainWindow(QMainWindow,Ui_MainWindow):
             t_dict = {}
             for j in range(ncols)[1:]:
                 key = str(sheet.cell(0,j).value)
+                n_labels = sharedata.getLabels()
+                if key not in n_labels:
+                    sharedata.setLabels(n_labels+[key])
                 value = str(sheet.cell(i,j).value)
                 t_dict[key] = value
             sharedata.setLabelData(str(sheet.cell(i,0).value), t_dict)
             sharedata.saveShareData()
+
+
+        self.loadLabelList()
 
         # excel_dir = os.path.split(excel_file)[0]
         # data_dir = os.path.join(excel_dir, "Data")
@@ -339,8 +358,25 @@ class DocumentManagerMainWindow(QMainWindow,Ui_MainWindow):
             self.loadLabelList(accept_names)
 
 
-    def showDetail(self):
-        self.on_btn_editDocument_clicked()
+    @QtCore.pyqtSlot()
+    def on_pushButton_showlabel_clicked(self):
+        index = self.comboBox_selectlabel.currentIndex()
+        c_text = self.comboBox_selectlabel.currentText()
+        if index != -1:
+            self.listWidget_labelshow.addOne(c_text)
+            sharedata.setLabelShow(sharedata.getLabelShow()+[c_text])
+            self.on_btn_search_clicked()
+
+
+    @QtCore.pyqtSlot()
+    def on_pushButton_clearlabel_clicked(self):
+        self.listWidget_labelshow._reset()
+        sharedata.setLabelShow(["标题"]+sharedata.getLabels())
+        self.on_btn_search_clicked()
+
+
+
+
 
 
 

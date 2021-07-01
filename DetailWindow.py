@@ -26,7 +26,8 @@ class MyListItem(QWidget):
 
     def setUp(self):
         self.layout = QHBoxLayout(self)
-
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.layout.setSpacing(0)
         self.label = QLabel()
         self.label.setText(self.text)
         self.layout.addWidget(self.label)
@@ -130,7 +131,7 @@ class DetailDialog(QDialog,Ui_Dialog):
         mylistitem.editSig.connect(self.editLabel)
         mylistitem.deleteSig.connect(self.deleteLabel)
         t_item = QListWidgetItem()
-        t_item.setSizeHint(QtCore.QSize(200, 50))
+        t_item.setSizeHint(QtCore.QSize(200, 30))
         self.listwgt_labelList.addItem(t_item)
         self.listwgt_labelList.setItemWidget(t_item, mylistitem)
 

@@ -87,6 +87,20 @@ class ShareData():
             self.config["DocumentRoot"] = "./Data/Document/"
         return self.config["DocumentRoot"]
 
+
+    def setLabelShow(self, list):
+        self.config["LabelShow"] = list
+
+    def getLabelShow(self):
+        if "LabelShow" not in self.config.keys():
+            self.config["LabelShow"] = ["标题"]+self.getLabels()
+
+        res = []
+        for label in self.config["LabelShow"]:
+            if label in self.getLabels() + ["标题"]:
+                res.append(label)
+        return res
+
     def saveShareData(self):
         with open(self.shareDataPath, "w") as f:
             json.dump(self.config, f)
@@ -94,6 +108,7 @@ class ShareData():
         with open(self.labelDatePath, "w") as f:
             json.dump(self.labelData, f)
             f.close()
+
 
 
 sharedata = ShareData()
