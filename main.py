@@ -17,7 +17,6 @@ from DetailWindow import DetailDialog
 
 from ShareData import sharedata
 
-#Todo:写侧边栏，用于对不同的文档进行分类
 
 class DocumentManagerMainWindow(QMainWindow,Ui_MainWindow):
     def __init__(self,parent=None):
@@ -43,10 +42,24 @@ class DocumentManagerMainWindow(QMainWindow,Ui_MainWindow):
 
         self.n_category = list(sharedata.getAllLabelData().keys())
         self.loadLabelList(list(sharedata.getAllLabelData().keys()))
+        self.table_document.horizontalHeader().sectionClicked.connect(self.getHeaderClicked)
+        self.headclicked = ""
 
-
+    def getHeaderClicked(self, index):
+        self.headclicked = sharedata.getLabelShow()[index]
+        pass
 
     def loadLabelList(self, name_list):
+
+        sortColumnName = "标题"
+        sortColumnState = QtCore.Qt.AscendingOrder
+        sortColumnNum = self.table_document.horizontalHeader().sortIndicatorSection()
+        if sortColumnNum < self.table_document.columnCount():
+            sortColumnNum = self.headclicked
+            sortColumnState = self.table_document.horizontalHeader().sortIndicatorOrder()
+
+        self.table_document.clear()
+        self.table_document.setSortingEnabled(False)
         dist_list = []
         for name in name_list:
             if name in self.n_category:
@@ -68,6 +81,7 @@ class DocumentManagerMainWindow(QMainWindow,Ui_MainWindow):
                 self.comboBox_selectlabel.addItem(label)
 
 
+
         self.table_document.setRowCount(len(name_list))
         for i in range(len(name_list)):
             name = name_list[i]
@@ -83,6 +97,12 @@ class DocumentManagerMainWindow(QMainWindow,Ui_MainWindow):
                 t_item = QTableWidgetItem(t_dict[key])
                 self.table_document.setItem(i, labels.index(key), t_item)
 
+        print(self.table_document.horizontalHeaderItem(0).text())
+        self.table_document.setSortingEnabled(True)
+        if sortColumnName != "" and sortColumnName in labels:
+            self.table_document.sortByColumn(labels.index(sortColumnName), sortColumnState)
+
+
 
     @QtCore.pyqtSlot()
     def on_btn_newDocument_clicked(self):
@@ -95,7 +115,7 @@ class DocumentManagerMainWindow(QMainWindow,Ui_MainWindow):
     def on_btn_editDocument_clicked(self):
         if self.table_document.currentRow() != -1:
             self.DetailWindow = DetailDialog()
-            self.DetailWindow.setUp(self.table_document.item(self.table_document.currentRow(), 0).text())
+            self.DetailWindow.setUp(self.table_document.item(self.table_document.currentRow(), sharedata.getLabelShow().index("标题")).text())
             self.DetailWindow.labelChange.connect(self.on_btn_search_clicked)
             self.DetailWindow.show()
 
@@ -343,10 +363,8 @@ class DocumentManagerMainWindow(QMainWindow,Ui_MainWindow):
                 if accept:
                     accept_names.append(name)
             accept_names = list(set(accept_names))
-            self.table_document.clear()
             self.loadLabelList(accept_names)
         elif t_text == "":
-            self.table_document.clear()
             accept_names = list(sharedata.getAllLabelData().keys())
             self.loadLabelList(accept_names)
         else:
@@ -362,7 +380,6 @@ class DocumentManagerMainWindow(QMainWindow,Ui_MainWindow):
                         break
 
             accept_names = list(set(accept_names))
-            self.table_document.clear()
             self.loadLabelList(accept_names)
 
         return accept_names
@@ -433,18 +450,24 @@ class DocumentManagerMainWindow(QMainWindow,Ui_MainWindow):
 
     def createMenuAction(self, name):
         t_action = self.contextMenu.addAction("放入\"{}\"类别中".format(name))
-        t_action.triggered.connect(lambda: self.changeCategory(self.table_document.currentRow(), name))
+        t_action.triggered.connect(lambda: self.changeCategory(self.table_document.selectedItems(), name))
         return t_action
 
-    def changeCategory(self, row, dist):
-        name = self.name_list[row]
-        CategoryDictionary = sharedata.getAllName2Category()
-        orig_category = CategoryDictionary[name]
-        t_category = sharedata.getCategory()
-        if orig_category != "##OTHERS##":
-            t_category[orig_category].remove(name)
-        if dist != "##OTHERS##":
-            t_category[dist].append(name)
+    def changeCategory(self, selecteditems, dist):
+        rowList = []
+        for item in selecteditems:
+            if item.row() not in rowList:
+                rowList.append(item.row())
+
+        for row in rowList:
+            name = self.name_list[row]
+            CategoryDictionary = sharedata.getAllName2Category()
+            orig_category = CategoryDictionary[name]
+            t_category = sharedata.getCategory()
+            if orig_category != "##OTHERS##":
+                t_category[orig_category].remove(name)
+            if dist != "##OTHERS##":
+                t_category[dist].append(name)
         self.listWidget_category.rowClicked()
         self.listWidget_category.updateNum()
 

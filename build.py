@@ -5,7 +5,7 @@ import shutil
 
 if os.path.isdir("./dist"):
     shutil.rmtree('./dist')
-os.system(f'pyinstaller -y -F -w ./main.spec')
+os.system(f'pyinstaller -y -F -w ./main.py')
 os.makedirs("./dist/Data/Image", exist_ok=True)
 os.makedirs("./dist/Data/Text", exist_ok=True)
 os.makedirs("./dist/Data/Document", exist_ok=True)

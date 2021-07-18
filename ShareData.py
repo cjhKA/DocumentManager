@@ -130,6 +130,18 @@ class ShareData():
         return in_dict
 
 
+    def getLabel2Content(self):
+        labelData = self.getAllLabelData()
+        labels = self.getLabels()
+        dict = {}
+        for label in labels:
+            dict[label] = []
+        for name in labelData:
+            for l in labelData[name]:
+                if l in dict.keys() and labelData[name][l] not in dict[l]:
+                    dict[l].append(labelData[name][l])
+        return dict
+
     def getCategoryOrder(self):
         if "CategoryOrder" not in self.config.keys():
             self.config["CategoryOrder"] = list(self.getCategory().keys())

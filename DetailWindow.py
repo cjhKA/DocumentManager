@@ -2,7 +2,7 @@ import os
 import sys
 import PyQt5.sip as sip
 from PyQt5.QtWidgets import QDialog,QApplication,QListWidgetItem,QWidget,QHBoxLayout,\
-    QLabel,QLineEdit,QPushButton,QSpacerItem,QSizePolicy,QMessageBox
+    QLabel,QLineEdit,QPushButton,QSpacerItem,QSizePolicy,QMessageBox,QCompleter
 from PyQt5 import QtCore
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import pyqtSignal
@@ -97,10 +97,11 @@ class DetailDialog(QDialog,Ui_Dialog):
         self.verticalLayout.insertLayout(len(self.layoutList), self.t_layout)
         self.layoutList.append(self.t_layout)
 
-
+        self.dict = sharedata.getLabel2Content()
         self.loadLabel()
         self.setWindowTitle("文献详情")
         self.setWindowIcon(QIcon("./media/ustb.ico"))
+
 
         # self.setUp("Name")
 
@@ -147,6 +148,10 @@ class DetailDialog(QDialog,Ui_Dialog):
         self.t_layout.addWidget(self.t_linedit)
         self.verticalLayout.insertLayout(len(self.layoutList), self.t_layout)
         self.layoutList.append(self.t_layout)
+
+        if t_label in self.dict.keys():
+            self.t_completer = QCompleter(self.dict[t_label])
+            self.t_linedit.setCompleter(self.t_completer)
 
 
 
@@ -250,7 +255,7 @@ class DetailDialog(QDialog,Ui_Dialog):
         self.name = new_name
         sharedata.saveShareData()
 
-        self.labelChange.emit()
+        # self.labelChange.emit()
 
         return True
 

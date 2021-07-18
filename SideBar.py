@@ -35,7 +35,8 @@ class ShowListItem(QWidget):
         self.deletebtn.clicked.connect(self.delete)
 
         self.layout.addItem(self.spacer)
-        self.layout.addWidget(self.deletebtn)
+        if self.text != "标题":
+            self.layout.addWidget(self.deletebtn)
 
     def delete(self):
         self.sg_showListItemDelete.emit(self.text)
